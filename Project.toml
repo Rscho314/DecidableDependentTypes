@@ -1,9 +1,7 @@
-authors = ["Raoul Schorer <raoul.schorer@gmail.com>"]
 name = "DecidableDependentTypes"
 uuid = "cbd3b3b0-f97c-11e8-2d74-ff4e352c5f95"
+authors = ["Raoul Schorer <raoul.schorer@gmail.com>"]
 version = "0.1.0"
-
-[deps]
 
 [compat]
 julia = "1.0"
