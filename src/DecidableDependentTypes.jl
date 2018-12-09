@@ -28,7 +28,7 @@ e ::= x | λx:τ.e | e e
 
 export stx_ob
 
-#Types (just synonyms for now)
+#Types (just type synonyms for now)
 const Ex = Expr
 const Ty = Symbol
 
@@ -50,58 +50,52 @@ struct stx_ob
     τ::Ty
 end
 
-#Not sure if functions or for-syntax functions
-#Fig. 4
-function add_τ(stx::stx_ob, τ::Ty)
-    return add_stx_prop(stx, τ) #$ or not $?
+#BOOL lang
+# (bool->lit arg:boolean)
+macro bool_to_lit(a)
+    eval(a) ? (x -> x) : (x -> !x)
 end
+#DecidableDependentTypes.@bool_to_lit(:false)
+#DecidableDependentTypes.@bool_to_lit(false)
 
-function get_τ(stx::stx_ob)
-    return stx.τ  # equivalent of (get-syntax-prop e τ) fig. 4
+#(λ (x y) (and #t ((bool->lit #f) x) ((bool->lit #f) y)))
+macro make_clause(xs, bools, res)
+    lits = map((x -> @eval @bool_to_lit $x), bools.args)
+    clause_elements = map.(lits, xs.args)
+    and_res = all(push!(clause_elements, res))
+    return and_res
 end
-
-function compute_τ(stx::stx_ob)
-    return get_τ(local_expand(stx))  # stx_ob or stx_ob.e?
-end
-
-function erase_τ(stx::stx_ob)
-    return local_expand(stx)
-end
-
-function comp_and_erase_τ(stx::stx_ob)
-    return local_expand(stx), get_τ(stx)
-end
-
-function τ_eq(τ1::Ty, τ2::Ty)
-    return stx_eq(τ1, τ2)
-end
-
-function τ_imply(_, _)
-    return error("no runtime types")
-end
-
-function comp_and_erase_τ_ctx(stx, (x, τ))
-    return "TODO"
-end
-
-#MACROS for sure
-macro τ_impl(τ_in, τ_out)
-    return τ_imply(τ_in, τ_out)
-end
+#DecidableDependentTypes.@make_clause((false, false), (false, false), true)
+#DecidableDependentTypes.@make_clause((true, false), (true, false), false)
+#DecidableDependentTypes.@make_clause((false, true), (false, true), true)
+#DecidableDependentTypes.@make_clause((true, true), (true, true), true)
 
 """
-macro checked_λ((x, τ_in::Ty), stx::stx_ob)
-    x_bar, e_bar, τ_out = comp_and_erase_τ_ctx(e, (x, τ_in))
-    return add_τ((λ_bar(x_bar), e_bar),
-                    @τ_impl(τ_in, τ_out))
-end
+xs : Tuple{Vararg{Bool}}
+tbl : Tuple{Tuple{Vararg{Bool}}, Tuple{Vararg{Bool}}}
+TODO: learn how to specify those types in the macro args.
 """
-macro checked_appv0(args...)
-    return args[1]
+macro truth_table(xs, vars, r)
+    clauses = []
+    for i=1:length(vars.args)
+        push!(clauses, @eval @make_clause($xs, $(vars.args[i]), $(r.args[i])))
+    end
+    return any(clauses)
 end
+#DecidableDependentTypes.@truth_table((false, true),((true, false), (false, true), (false, false)), (false, true, false))
 
-macro checked_appv1(args...)
-    return args[1]
+function subset(x, y)
+    @eval @truth_table(
+        ($x, $y),
+        ((false, false),
+         (true, false),
+         (false, true),
+         (true, true)),
+        (true, false, true, true))
 end
+#DecidableDependentTypes.subset(true, false)
+#DecidableDependentTypes.subset(true, true)
+#DecidableDependentTypes.subset(false, false)
+#DecidableDependentTypes.subset(false, true)
 
 end # module

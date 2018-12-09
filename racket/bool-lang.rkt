@@ -4,6 +4,7 @@
 (provide #%module-begin
          #%top
          #%top-interaction
+         #%datum
          true
          false
          and
@@ -17,14 +18,14 @@
 
 (define-syntax (bool->lit stx)
   (syntax-parse stx
-    #:literals (true false)
-    [(_ true) #'(λ (x) x)]
-    [(_ false) #'not]))
+    ;#:literals (true false)
+    [(_ #t) #'(λ (x) x)]
+    [(_ #f) #'not]))
 
 (define-syntax (truth-table stx)
   (syntax-parse stx
-    #:literals (true false)
-    [(_ (x ...) [arg ... = res] ...)
+    ;#:literals (true false)
+    [(_ (x:id ...) [arg:boolean ... = res:boolean] ...)
      #:with (dnf-clause-fn ...)
      #'((λ (x ...)
          (and res
@@ -32,9 +33,10 @@
      #'(λ (x ...)
          (or (dnf-clause-fn x ...)...))]))
 
+
 (define ⊃
   (truth-table (x y)
-               [false false = true]
-               [true false = false]
-               [false true = true]
-               [true true = true]))
+               [#f #f = #t]
+               [#t #f = #f]
+               [#f #t = #t]
+               [#t #t = #t]))
